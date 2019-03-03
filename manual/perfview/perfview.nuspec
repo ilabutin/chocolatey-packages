@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>perfview</id>
+    <version>2.0.26</version>
+    <packageSourceUrl>https://github.com/ilabutin/chocolatey-packages</packageSourceUrl>
+    <owners>ilabutin</owners>
+    <title>PerfView</title>
+    <authors>Microsoft</authors>
+    <projectUrl>https://github.com/Microsoft/perfview/</projectUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/Microsoft/perfview@3368f33f5719d7ce9f1fae839f74ddd46fea3f32/src/PerfView/performance.ico</iconUrl>
+    <tags>microsoft perfview perf performance analysis cpu memory etl clr heap dump xperf</tags>
+    <summary>PerfView is a performance-analysis tool that helps isolate CPU- and memory-related performance issues.</summary>
+    <description>PerfView is a performance analysis tool focusing on ETW information (ETL files) as well as CLR memory information (heap dumps). It can collect and view ETL files as well as XPERF CSV files. Powerful grouping operators allow you to understand performance profiles in ways other tools can't. PerfView is used internally at Microsoft by a number of teams and is the primary performance investigation tool on the .NET Runtime team. Features include:
+
+    - Non-invasive collection - suitable for use in live, production environments
+    - Xcopy deployment - copy and run
+    - Memory
+        + Support for very large heaps (gigabytes)
+        + Snapshot diffing
+        + Dump files (.dmp)
+    - CPU Performance
+        + Support for managed, native, and mixed code
+        + Can read XPerf logs
+        + Profile diffing
+</description>
+  </metadata>
+</package>
