@@ -3,9 +3,10 @@ name: Chocolatey package update
 on:
   push:
     branches:
-    - main
+    - master
   schedule:
   - cron: "0 1 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
