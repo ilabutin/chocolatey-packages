@@ -1,0 +1,31 @@
+name: Chocolatey package update
+
+on:
+  push:
+    branches:
+    - main
+  schedule:
+  - cron: "0 1 * * *"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Authenticate to Chocolatey
+        uses: Amadevus/pwsh-script@v2.0.1
+        with:
+          script: choco apikey --key ${{secrets.CHOCO_API_KEY}} --source https://push.chocolatey.org/
+      
+      - name: Update packages
+        uses: Amadevus/pwsh-script@v2.0.1
+        with:
+          script: |
+		    Install-Module au
+			$Env:gist_id=${{secrets.GIST_ID}}
+			$Env:github_api_key=${{secrets.GITHUB_API_KEY}}
+			$Env:au_Push=$True
+		    .\update_all.ps1 -Verbose
+			$info
