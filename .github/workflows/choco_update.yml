@@ -23,9 +23,9 @@ jobs:
         uses: Amadevus/pwsh-script@v2.0.1
         with:
           script: |
-		    Install-Module au
-			$Env:gist_id=${{secrets.GIST_ID}}
-			$Env:github_api_key=${{secrets.GITHUB_API_KEY}}
-			$Env:au_Push=$True
-		    .\update_all.ps1 -Verbose
-			$info
+            Install-Module au
+            $Env:gist_id=${{secrets.GIST_ID}}
+            $Env:github_api_key=${{secrets.GITHUB_API_KEY}}
+            $Env:au_Push=$True
+            .\update_all.ps1 -Verbose
+            $info
