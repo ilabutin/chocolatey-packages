@@ -22,7 +22,7 @@ jobs:
       - name: Update packages
         shell: pwsh
         run: |
-          Install-Module au
+          Install-Module -Force au
           $Env:gist_id=${{secrets.GIST_ID}}
           $Env:github_api_key=${{secrets.MYGITHUB_API_KEY}}
           $Env:au_Push=$True
