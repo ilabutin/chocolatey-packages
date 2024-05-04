@@ -11,12 +11,16 @@ function Get-GitHubReleaseUrl( $GitHubRepositoryUrl, $Pattern='\.exe$') {
 }
 
 function global:au_BeforeUpdate() {
-   $Latest.Checksum64 = Get-RemoteChecksum $Latest.Url64
+	Write-Host "Before update"
+    $Latest.Checksum64 = Get-RemoteChecksum $Latest.Url64
+	Write-Host "Remote checksum: $Latest.Checksum64"
 }
 
 function global:au_GetLatest {
+	Write-Host "Getting latest version"
     $url = Get-GitHubReleaseUrl 'https://github.com/Microsoft/PerfView'
     $version = $url -split '/' | select -Last 1 -Skip 1
+    Write-Host "Latest version: $version"
 
     return @{
         Version      = $version.Substring(1)
