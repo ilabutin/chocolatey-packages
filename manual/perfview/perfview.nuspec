@@ -3,7 +3,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>perfview</id>
-    <version>3.1.12</version>
+    <version>3.1.13</version>
     <packageSourceUrl>https://github.com/ilabutin/chocolatey-packages</packageSourceUrl>
     <owners>ilabutin</owners>
     <title>PerfView</title>
