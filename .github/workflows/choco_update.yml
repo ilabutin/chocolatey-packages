@@ -115,11 +115,11 @@ jobs:
 
               # Get package info from Chocolatey API
               $packageRemoteVersion = Get-CurrentChocoPackageVersion "PerfView" 
-              Write-Host "Package remote version: $packageVersion"
+              Write-Host "Package remote version: $packageRemoteVersion"
               
               if ($packageVersion) {
-                  Write-Host "Current Chocolatey version: $packageVersion"
-                  echo "CURRENT_VERSION=$packageVersion" >> $env:GITHUB_OUTPUT
+                  Write-Host "Current Chocolatey version: $packageRemoteVersion"
+                  echo "CURRENT_VERSION=$packageRemoteVersion" >> $env:GITHUB_OUTPUT
               } else {
                   Write-Error "No existing package found - failing"
                   exit 1
