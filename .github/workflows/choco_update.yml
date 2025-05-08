@@ -76,8 +76,8 @@ jobs:
               $response = Invoke-RestMethod -Uri $apiUrl -Method Get
               Write-Host "Got response: $($response.OuterXml)"
               
-              if ($response.d.results) {
-                  $currentVersion = $response.d.results[0].Version.'#text'
+              if ($response.entry) {
+                  $currentVersion = $response.entry.properties.Version.'#text'
                   Write-Host "Current Chocolatey version: $currentVersion"
                   echo "CURRENT_VERSION=$currentVersion" >> $env:GITHUB_OUTPUT
               } else {
