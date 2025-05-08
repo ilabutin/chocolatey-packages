@@ -68,16 +68,54 @@ jobs:
               }
               return $null
           }
+
+          function Get-CurrentChocoPackageVersion {
+              param([string]$package_id)
+
+              try {
+                  # Run choco search with --exact to get precise package match
+                  $search_output = choco search $package_id --exact --limit-output | Where-Object { $_ -match $package_id }
+                  
+                  # If no results found, return $null
+                  if (-not $search_output) {
+                      return $null
+                  }
+
+                  # Parse version from the output
+                  # Format is typically: package|version
+                  if ($search_output -match '\|') {
+                      # Handle limit-output format
+                      $version = ($search_output -split '\|')[1]
+                  } else {
+                      # Handle standard output format
+                      # Example: "Chromium v119.0.6045.124 [Approved]"
+                      if ($search_output -match '\sv([\d\.]+)') {
+                          $version = $matches[1]
+                      } else {
+                          return $null
+                      }
+                  }
+
+                  # Clean and validate version
+                  $version = $version.Trim()
+                  if ([string]::IsNullOrWhiteSpace($version)) {
+                      return $null
+                  }
+
+                  return $version
+              } catch {
+                  Write-Error "Error checking current version for package '$package_id': $_"
+                  return $null
+              }
+          }
           
           try {
               # Get package info from Chocolatey API
-              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id%20eq%20%27perfview%27&`$orderby=Version%20desc&`$top=1"
-              Write-Host "Querying url $apiUrl"
-              $response = Invoke-RestMethod -Uri $apiUrl -Method Get
-              Write-Host "Got response: $($response.OuterXml)"
+              $packageVersion = Get-CurrentChocoPackageVersion "PerfView" 
+              Write-Host "Package version: $packageVersion"
               
-              if ($response.entry) {
-                  $currentVersion = $response.entry.properties.Version.'#text'
+              if ($packageVersion) {
+                  $currentVersion = Get-NormalizedVersion "$packageVersion"
                   Write-Host "Current Chocolatey version: $currentVersion"
                   echo "CURRENT_VERSION=$currentVersion" >> $env:GITHUB_OUTPUT
               } else {
