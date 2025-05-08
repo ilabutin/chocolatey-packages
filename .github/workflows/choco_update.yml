@@ -56,18 +56,6 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          
-          # Function to parse version and handle pre-release versions
-          function Get-NormalizedVersion {
-              param([string]$version)
-              if ($version -match '^(\d+\.\d+\.\d+)(.*)$') {
-                  return @{
-                      Version = [version]$matches[1]
-                      Suffix = $matches[2]
-                  }
-              }
-              return $null
-          }
 
           function Get-CurrentChocoPackageVersion {
               param([string]$package_id)
@@ -110,9 +98,24 @@ jobs:
           }
           
           try {
+              # Get package version from nuspec file
+              $nuspecContent = Get-Content "./automatic/perfview/perfview.nuspec" -Raw
+              $nuspecVersion = ([regex]'<version>(.+?)</version>').Matches($nuspecContent)[0].Groups[1].Value
+              Write-Host "Nuspec version: $nuspecVersion"
+
+              # Get version from previous step (check_release)
+              $releaseVersion = ${{ steps.check_release.outputs.version }}
+              Write-Host "Release version: $releaseVersion"
+
+              if ($nuspecVersion -eq $releaseVersion) {
+                  Write-Host "Nuspec version matches release version. Using nuspec version."
+                  echo "CURRENT_VERSION=$nuspecVersion" >> $env:GITHUB_OUTPUT
+                  exit 0
+              }
+
               # Get package info from Chocolatey API
-              $packageVersion = Get-CurrentChocoPackageVersion "PerfView" 
-              Write-Host "Package version: $packageVersion"
+              $packageRemoteVersion = Get-CurrentChocoPackageVersion "PerfView" 
+              Write-Host "Package remote version: $packageVersion"
               
               if ($packageVersion) {
                   Write-Host "Current Chocolatey version: $packageVersion"
@@ -186,7 +189,7 @@ jobs:
           }
           
           # Push to Chocolatey
-          #choco push -s https://push.chocolatey.org/ -k $env:CHOCO_API_KEY
+          choco push -s https://push.chocolatey.org/ -k $env:CHOCO_API_KEY
           
           if ($LASTEXITCODE -ne 0) {
               Write-Error "Failed to push package to Chocolatey"
