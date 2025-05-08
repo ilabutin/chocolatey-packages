@@ -200,7 +200,7 @@ jobs:
           title: 'Update PerfView to version ${{ steps.check_release.outputs.version }}'
           commit-message: 'update PerfView to version ${{ steps.check_release.outputs.version }}'
           branch: 'update-package'
-          base: 'main'
+          base: 'master'
           body: |
             Automated package update to version ${{ steps.check_release.outputs.version }}
             
