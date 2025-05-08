@@ -115,9 +115,8 @@ jobs:
               Write-Host "Package version: $packageVersion"
               
               if ($packageVersion) {
-                  $currentVersion = Get-NormalizedVersion "$packageVersion"
-                  Write-Host "Current Chocolatey version: $currentVersion"
-                  echo "CURRENT_VERSION=$currentVersion" >> $env:GITHUB_OUTPUT
+                  Write-Host "Current Chocolatey version: $packageVersion"
+                  echo "CURRENT_VERSION=$packageVersion" >> $env:GITHUB_OUTPUT
               } else {
                   Write-Error "No existing package found - failing"
                   exit 1
@@ -160,7 +159,6 @@ jobs:
           $nuspecPath = "./automatic/perfview/perfview.nuspec"
           [xml]$nuspec = Get-Content $nuspecPath
           $nuspec.package.metadata.version = "${{ steps.check_release.outputs.version }}"
-          # $nuspec.package.metadata.releaseNotes = "${{ steps.check_release.outputs.release_notes }}"
           $nuspec.Save($nuspecPath)
           
           # Update chocolateyinstall.ps1
