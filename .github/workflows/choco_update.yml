@@ -71,7 +71,7 @@ jobs:
           
           try {
               # Get package info from Chocolatey API
-              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id eq 'perfview'&`$orderby=Version desc&`$top=1"
+              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id%20eq%20'perfview'&`$orderby=Version%20desc&`$top=1"
               Write-Host "Querying url $apiUrl"
               $response = Invoke-RestMethod -Uri $apiUrl -Method Get
               Write-Host "Got response: $response"
