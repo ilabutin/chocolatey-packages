@@ -117,7 +117,7 @@ jobs:
               $packageRemoteVersion = Get-CurrentChocoPackageVersion "PerfView" 
               Write-Host "Package remote version: $packageRemoteVersion"
               
-              if ($packageVersion) {
+              if ($packageRemoteVersion) {
                   Write-Host "Current Chocolatey version: $packageRemoteVersion"
                   echo "CURRENT_VERSION=$packageRemoteVersion" >> $env:GITHUB_OUTPUT
               } else {
