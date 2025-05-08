@@ -1,18 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>perfview</id>
-    <version>3.1.9</version>
+    <version>3.1.21</version>
     <packageSourceUrl>https://github.com/ilabutin/chocolatey-packages</packageSourceUrl>
     <owners>ilabutin</owners>
     <title>PerfView</title>
     <authors>Microsoft</authors>
     <projectUrl>https://github.com/Microsoft/perfview/</projectUrl>
-	<projectSourceUrl>https://github.com/Microsoft/perfview/</projectSourceUrl>
-	<bugTrackerUrl>https://github.com/Microsoft/perfview/issues</bugTrackerUrl>
-	<docsUrl>https://htmlpreview.github.io/?https://github.com/Microsoft/perfview/blob/master/src/PerfView/SupportFiles/UsersGuide.htm</docsUrl>
-	<licenseUrl>https://raw.githubusercontent.com/Microsoft/perfview/master/LICENSE.TXT</licenseUrl>
+    <projectSourceUrl>https://github.com/Microsoft/perfview/</projectSourceUrl>
+    <bugTrackerUrl>https://github.com/Microsoft/perfview/issues</bugTrackerUrl>
+    <docsUrl>https://htmlpreview.github.io/?https://github.com/Microsoft/perfview/blob/master/src/PerfView/SupportFiles/UsersGuide.htm</docsUrl>
+    <licenseUrl>https://raw.githubusercontent.com/Microsoft/perfview/master/LICENSE.TXT</licenseUrl>
     <iconUrl>https://cdn.jsdelivr.net/gh/Microsoft/perfview@3368f33f5719d7ce9f1fae839f74ddd46fea3f32/src/PerfView/performance.ico</iconUrl>
     <tags>microsoft perfview perf performance analysis cpu memory etl clr heap dump xperf</tags>
     <summary>PerfView is a performance-analysis tool that helps isolate CPU- and memory-related performance issues.</summary>
