@@ -104,7 +104,7 @@ jobs:
               Write-Host "Nuspec version: $nuspecVersion"
 
               # Get version from previous step (check_release)
-              $releaseVersion = ${{ steps.check_release.outputs.version }}
+              $releaseVersion = "${{ steps.check_release.outputs.version }}"
               Write-Host "Release version: $releaseVersion"
 
               if ($nuspecVersion -eq $releaseVersion) {
