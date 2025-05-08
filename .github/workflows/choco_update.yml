@@ -71,11 +71,11 @@ jobs:
           
           try {
               # Get package info from Chocolatey API
-              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id eq '$env:PACKAGE_ID' and IsLatestVersion eq true"
+              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id eq 'perfview'&`$orderby=Version desc&`$top=1"
               $response = Invoke-RestMethod -Uri $apiUrl -Method Get
               
-              if ($response.feed.entry) {
-                  $currentVersion = $response.feed.entry.properties.Version.'#text'
+              if ($response.d.results) {
+                  $currentVersion = $response.d.results[0].Version.'#text'
                   Write-Host "Current Chocolatey version: $currentVersion"
                   echo "CURRENT_VERSION=$currentVersion" >> $env:GITHUB_OUTPUT
               } else {
@@ -181,4 +181,3 @@ jobs:
           name: package-artifacts
           path: |
             *.nupkg
-            ./package/**/*

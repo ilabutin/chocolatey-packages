@@ -1,0 +1,17 @@
+meta {
+  name: Get package versions
+  type: http
+  seq: 2
+}
+
+get {
+  url: https://community.chocolatey.org/api/v2/Packages()?$filter=Id eq 'perfview'&$orderby=Version desc&$top=1
+  body: none
+  auth: inherit
+}
+
+params:query {
+  $filter: Id eq 'perfview'
+  $orderby: Version desc
+  $top: 1
+}
