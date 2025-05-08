@@ -2,7 +2,7 @@ name: Update Chocolatey Package
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Run every 12 hours
+    - cron: '0 3 * * *'  # Run every day at 03:00
   workflow_dispatch:  # Allow manual triggers
 
 env:
@@ -56,28 +56,70 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          
-          # Function to parse version and handle pre-release versions
-          function Get-NormalizedVersion {
-              param([string]$version)
-              if ($version -match '^(\d+\.\d+\.\d+)(.*)$') {
-                  return @{
-                      Version = [version]$matches[1]
-                      Suffix = $matches[2]
+
+          function Get-CurrentChocoPackageVersion {
+              param([string]$package_id)
+
+              try {
+                  # Run choco search with --exact to get precise package match
+                  $search_output = choco search $package_id --exact --limit-output | Where-Object { $_ -match $package_id }
+                  
+                  # If no results found, return $null
+                  if (-not $search_output) {
+                      return $null
                   }
+
+                  # Parse version from the output
+                  # Format is typically: package|version
+                  if ($search_output -match '\|') {
+                      # Handle limit-output format
+                      $version = ($search_output -split '\|')[1]
+                  } else {
+                      # Handle standard output format
+                      # Example: "Chromium v119.0.6045.124 [Approved]"
+                      if ($search_output -match '\sv([\d\.]+)') {
+                          $version = $matches[1]
+                      } else {
+                          return $null
+                      }
+                  }
+
+                  # Clean and validate version
+                  $version = $version.Trim()
+                  if ([string]::IsNullOrWhiteSpace($version)) {
+                      return $null
+                  }
+
+                  return $version
+              } catch {
+                  Write-Error "Error checking current version for package '$package_id': $_"
+                  return $null
               }
-              return $null
           }
           
           try {
+              # Get package version from nuspec file
+              $nuspecContent = Get-Content "./automatic/perfview/perfview.nuspec" -Raw
+              $nuspecVersion = ([regex]'<version>(.+?)</version>').Matches($nuspecContent)[0].Groups[1].Value
+              Write-Host "Nuspec version: $nuspecVersion"
+
+              # Get version from previous step (check_release)
+              $releaseVersion = "${{ steps.check_release.outputs.version }}"
+              Write-Host "Release version: $releaseVersion"
+
+              if ($nuspecVersion -eq $releaseVersion) {
+                  Write-Host "Nuspec version matches release version. Using nuspec version."
+                  echo "CURRENT_VERSION=$nuspecVersion" >> $env:GITHUB_OUTPUT
+                  exit 0
+              }
+
               # Get package info from Chocolatey API
-              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id eq 'perfview'&`$orderby=Version desc&`$top=1"
-              $response = Invoke-RestMethod -Uri $apiUrl -Method Get
+              $packageRemoteVersion = Get-CurrentChocoPackageVersion "PerfView" 
+              Write-Host "Package remote version: $packageRemoteVersion"
               
-              if ($response.d.results) {
-                  $currentVersion = $response.d.results[0].Version.'#text'
-                  Write-Host "Current Chocolatey version: $currentVersion"
-                  echo "CURRENT_VERSION=$currentVersion" >> $env:GITHUB_OUTPUT
+              if ($packageRemoteVersion) {
+                  Write-Host "Current Chocolatey version: $packageRemoteVersion"
+                  echo "CURRENT_VERSION=$packageRemoteVersion" >> $env:GITHUB_OUTPUT
               } else {
                   Write-Error "No existing package found - failing"
                   exit 1
@@ -120,7 +162,6 @@ jobs:
           $nuspecPath = "./automatic/perfview/perfview.nuspec"
           [xml]$nuspec = Get-Content $nuspecPath
           $nuspec.package.metadata.version = "${{ steps.check_release.outputs.version }}"
-          # $nuspec.package.metadata.releaseNotes = "${{ steps.check_release.outputs.release_notes }}"
           $nuspec.Save($nuspecPath)
           
           # Update chocolateyinstall.ps1
@@ -148,7 +189,7 @@ jobs:
           }
           
           # Push to Chocolatey
-          #choco push -s https://push.chocolatey.org/ -k $env:CHOCO_API_KEY
+          choco push -s https://push.chocolatey.org/ -k $env:CHOCO_API_KEY
           
           if ($LASTEXITCODE -ne 0) {
               Write-Error "Failed to push package to Chocolatey"
@@ -162,7 +203,7 @@ jobs:
           title: 'Update PerfView to version ${{ steps.check_release.outputs.version }}'
           commit-message: 'update PerfView to version ${{ steps.check_release.outputs.version }}'
           branch: 'update-package'
-          base: 'main'
+          base: 'master'
           body: |
             Automated package update to version ${{ steps.check_release.outputs.version }}
             
