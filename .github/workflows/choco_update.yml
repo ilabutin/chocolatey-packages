@@ -1,30 +1,184 @@
-name: Chocolatey package update
+name: Update Chocolatey Package
 
 on:
-  push:
-    branches:
-    - master
   schedule:
-  - cron: "0 1 * * *"
-  workflow_dispatch:
+    - cron: '0 */12 * * *'  # Run every 12 hours
+  workflow_dispatch:  # Allow manual triggers
+
+env:
+  CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+  SOURCE_REPO: "Microsoft/perfview"
+  PACKAGE_ID: "perfview"
 
 jobs:
-  build:
-    runs-on: windows-2019
-
+  update-package:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Authenticate to Chocolatey
-        shell: powershell
-        run: choco apikey --key ${{secrets.CHOCO_API_KEY}} --source https://push.chocolatey.org/
-      
-      - name: Update packages
-        shell: powershell
+
+      - name: Check Latest GitHub Release
+        id: check_release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const release = await github.rest.repos.getLatestRelease({
+              owner: '${{ env.SOURCE_REPO }}'.split('/')[0],
+              repo: '${{ env.SOURCE_REPO }}'.split('/')[1]
+            });
+            
+            const version = release.data.tag_name.replace('v', '');
+            console.log(`Latest GitHub release version: ${version}`);
+            
+            // Find PerfView.exe asset
+            const perfViewAsset = release.data.assets.find(asset => 
+              asset.name.toLowerCase() === 'perfview.exe'
+            );
+            
+            if (!perfViewAsset) {
+              core.setFailed('PerfView.exe not found in release assets');
+              return;
+            }
+
+            console.log(`Found PerfView.exe: ${perfViewAsset.browser_download_url}`);
+            
+            core.setOutput('version', version);
+            core.setOutput('download_url', perfViewAsset.browser_download_url);
+            core.setOutput('release_notes', release.data.body);
+            
+            // Log asset information for debugging
+            console.log('Available assets:');
+            release.data.assets.forEach(asset => {
+              console.log(`- ${asset.name}: ${asset.browser_download_url}`);
+            });
+
+      - name: Get Current Chocolatey Version
+        id: current_version
+        shell: pwsh
         run: |
-          Install-Module -Force Chocolatey-AU
-          $Env:gist_id="${{secrets.GIST_ID}}"
-          $Env:github_api_key="${{secrets.MYGITHUB_API_KEY}}"
-          $Env:au_Push=$True
-          .\update_all.ps1 -Verbose
-          $info
+          $ErrorActionPreference = 'Stop'
+          
+          # Function to parse version and handle pre-release versions
+          function Get-NormalizedVersion {
+              param([string]$version)
+              if ($version -match '^(\d+\.\d+\.\d+)(.*)$') {
+                  return @{
+                      Version = [version]$matches[1]
+                      Suffix = $matches[2]
+                  }
+              }
+              return $null
+          }
+          
+          try {
+              # Get package info from Chocolatey API
+              $apiUrl = "https://community.chocolatey.org/api/v2/Packages()?`$filter=Id eq '$env:PACKAGE_ID' and IsLatestVersion eq true"
+              $response = Invoke-RestMethod -Uri $apiUrl -Method Get
+              
+              if ($response.feed.entry) {
+                  $currentVersion = $response.feed.entry.properties.Version.'#text'
+                  Write-Host "Current Chocolatey version: $currentVersion"
+                  echo "CURRENT_VERSION=$currentVersion" >> $env:GITHUB_OUTPUT
+              } else {
+                  Write-Error "No existing package found - failing"
+                  exit 1
+              }
+          }
+          catch {
+              Write-Error "Failed to get current version: $_"
+              exit 1
+          }
+
+      - name: Download Latest Release
+        if: steps.current_version.outputs.CURRENT_VERSION != steps.check_release.outputs.version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          
+          # Create download directory
+          New-Item -ItemType Directory -Path "./download" -Force
+          
+          # Download file
+          $downloadUrl = "${{ steps.check_release.outputs.download_url }}"
+          $fileName = Split-Path -Path $downloadUrl -Leaf
+          $outputPath = "./download/$fileName"
+          
+          Write-Host "Downloading from: $downloadUrl"
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $outputPath
+          
+          # Calculate SHA256
+          $hash = Get-FileHash -Path $outputPath -Algorithm SHA256
+          echo "CHECKSUM=$($hash.Hash.ToLower())" >> $env:GITHUB_ENV
+          echo "FILE_NAME=$fileName" >> $env:GITHUB_ENV
+
+      - name: Update Package Files
+        if: steps.current_version.outputs.CURRENT_VERSION != steps.check_release.outputs.version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          
+          # Update nuspec
+          $nuspecPath = "./automatic/perfview/perfview.nuspec"
+          [xml]$nuspec = Get-Content $nuspecPath
+          $nuspec.package.metadata.version = "${{ steps.check_release.outputs.version }}"
+          # $nuspec.package.metadata.releaseNotes = "${{ steps.check_release.outputs.release_notes }}"
+          $nuspec.Save($nuspecPath)
+          
+          # Update chocolateyinstall.ps1
+          $installScriptPath = "./automatic/perfview/tools/chocolateyinstall.ps1"
+          $installScript = Get-Content $installScriptPath -Raw
+          $installScript = $installScript -replace 'url\s*=\s*[''"].+?[''"]', "url = '${{ steps.check_release.outputs.download_url }}'"
+          $installScript = $installScript -replace 'checksum\s*=\s*[''"].+?[''"]', "checksum = '$env:CHECKSUM'"
+          Set-Content -Path $installScriptPath -Value $installScript
+
+      - name: Pack and Push to Chocolatey
+        if: steps.current_version.outputs.CURRENT_VERSION != steps.check_release.outputs.version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          
+          # Pack the package
+          choco pack ./automatic/perfview/perfview.nuspec
+          
+          # Test install the package locally
+          choco install $env:PACKAGE_ID -s .\ -y --force
+          
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Package installation test failed"
+              exit 1
+          }
+          
+          # Push to Chocolatey
+          #choco push -s https://push.chocolatey.org/ -k $env:CHOCO_API_KEY
+          
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to push package to Chocolatey"
+              exit 1
+          }
+
+      - name: Create Pull Request
+        if: steps.current_version.outputs.CURRENT_VERSION != steps.check_release.outputs.version
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'Update PerfView to version ${{ steps.check_release.outputs.version }}'
+          commit-message: 'update PerfView to version ${{ steps.check_release.outputs.version }}'
+          branch: 'update-package'
+          base: 'main'
+          body: |
+            Automated package update to version ${{ steps.check_release.outputs.version }}
+            
+            Changes:
+            - Updated package version from ${{ steps.current_version.outputs.CURRENT_VERSION }} to ${{ steps.check_release.outputs.version }}
+            - Updated download URL to latest release
+            - Updated checksum
+            
+            Release Notes:
+            ${{ steps.check_release.outputs.release_notes }}
+
+      - name: Upload Build Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: package-artifacts
+          path: |
+            *.nupkg
+            ./package/**/*
