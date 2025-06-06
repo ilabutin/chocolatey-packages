@@ -21,8 +21,10 @@ New folder*
 New Text Document*.txt
 obj
 */working
+download/
 ketarin/soluto.xml
 *.stackdump
 update_vars.ps1
 update_info.xml
 Update-AUPackages.md
+manual/perfview/push_package.ps1
