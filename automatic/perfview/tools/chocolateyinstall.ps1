@@ -1,9 +1,10 @@
 $name = 'PerfView'
-$url = 'https://github.com/microsoft/perfview/releases/download/v3.2.3/PerfView.exe'
-$checksum = 'edf8b7eda654f9e818781c06d9a02c953b1db568cf0e42c625400523c4f46735'
+$url = 'https://github.com/microsoft/perfview/releases/download/v3.2.4/PerfView.exe'
+$checksum = 'c0a6471e2276ed4232be62285eada73a03346e3813f3b926dad4710b123719e4'
 $toolsDir = "$(Split-Path -Parent $MyInvocation.MyCommand.Definition)"
 
 Get-ChocolateyWebFile -PackageName PerfView -FileFullPath "$toolsDir\PerfView.exe" -url $url -checksum $checksum -checksumType 'sha256'
+
 
 
 
